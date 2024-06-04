@@ -36,24 +36,26 @@ def data_process(t):
     
     return " ".join(l)
 
-@app.route('/predict/<text>', methods=['GET'])
-def predict(text):
+@app.route('/predict', methods=['POST'])
+def predict():
     print("Received request...")
-
-    # Get input data from URL parameter
-    input_text = text
-
+    # Get input data from request
+    data = request.get_json()
+    print("Request data:", data)
+    email = data['email']
+    
     # Perform data preprocessing
-    processed_text = data_process(input_text)
+    input_email = data_process(email)
 
-    prediction = model.predict([processed_text])[0]
+    prediction = model.predict([input_email])[0]
 
     # Return the prediction
     print("Sending response...")
-    if prediction == 0:
-        res = "ham"
+
+    if prediction==0:
+        res="ham"
     else:
-        res = "spam"
+        res="spam"
 
     return jsonify({'prediction': res})
     
