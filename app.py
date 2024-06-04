@@ -27,6 +27,10 @@ def predict(text):
         res = "spam"
 
     return jsonify({'prediction': res})
+    
+@app.route('/hello', methods=['GET','POST'])
+def predict():
+    return "Hello"
 
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=True, host='0.0.0.0') 
