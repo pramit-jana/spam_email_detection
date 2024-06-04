@@ -1,11 +1,40 @@
 from flask import Flask, request, jsonify
 from data_process_method import data_process
+from flask_cors import CORS
 import joblib
 
 # Initialize Flask application
 app = Flask(__name__)
-
+CORS(app)
 model = joblib.load('model.pkl')
+
+
+import string
+import nltk
+nltk.download('all')
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+ps=PorterStemmer()
+
+
+def data_process(t):
+    t=t.lower()
+    t=nltk.word_tokenize(t)
+    l=[]
+    for i in t:
+        if i.isalnum():
+            l.append(i)
+    t=list(l)
+    l.clear()
+    for i in t:
+        if i not in stopwords.words('english') and i not in string.punctuation:
+            l.append(i)
+    t=list(l)
+    l.clear()
+    for i in t:
+        l.append(ps.stem(i))
+    
+    return " ".join(l)
 
 @app.route('/predict/<text>', methods=['GET'])
 def predict(text):
@@ -29,8 +58,8 @@ def predict(text):
     return jsonify({'prediction': res})
     
 @app.route('/hello', methods=['GET'])
-def predict():
+def hello():
     return "Hello"
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0') 
+    app.run(debug=True, port='0.0.0.0') 
