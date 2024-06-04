@@ -28,7 +28,7 @@ def predict(text):
 
     return jsonify({'prediction': res})
     
-@app.route('/hello', methods=['GET','POST'])
+@app.route('/hello', methods=['GET'])
 def predict():
     return "Hello"
 
