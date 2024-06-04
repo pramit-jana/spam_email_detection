@@ -7,28 +7,26 @@ app = Flask(__name__)
 
 model = joblib.load('model.pkl')
 
-@app.route('/predict', methods=['POST'])
-def predict():
+@app.route('/predict/<text>', methods=['GET'])
+def predict(text):
     print("Received request...")
-    # Get input data from request
-    data = request.get_json()
-    print("Request data:", data)
-    email = data['email']
-    
-    # Perform data preprocessing
-    input_email = data_process(email)
 
-    prediction = model.predict([input_email])[0]
+    # Get input data from URL parameter
+    input_text = text
+
+    # Perform data preprocessing
+    processed_text = data_process(input_text)
+
+    prediction = model.predict([processed_text])[0]
 
     # Return the prediction
     print("Sending response...")
-
-    if prediction==0:
-        res="ham"
+    if prediction == 0:
+        res = "ham"
     else:
-        res="spam"
+        res = "spam"
 
     return jsonify({'prediction': res})
 
 if __name__ == '__main__':
-    app.run(debug=True,port=8080)  # You can set debug to False in production
+    app.run(debug=False, port=8080) 
