@@ -182,7 +182,7 @@ url_model = joblib.load("url_analyzer.pkl")
 
 
 
-def extract_url(message):
+def analyze_url(message):
  
     url_pattern = re.compile(
         r'http[s]?://'       
@@ -193,13 +193,15 @@ def extract_url(message):
     
     # Search for the pattern in the message
     match = re.search(url_pattern, message)
-    print(match)
     res=0
     if match:
         url=match.group(0)
-        return match
+        features = extract_features(url)
+        features_2d = features.reshape(1, -1)
+        predict = url_model.predict(features_2d)
+        return 1 if predict==1 else 0
     else:
-        return None
+        return 0
 
 
 
@@ -246,17 +248,9 @@ def predict():
     print("Request data:", data)
     email = data['email']
     
-    match=extract_url(email)
-        
-    if match:
-        url=match.group(0)
-        features = extract_features(url)
-        features_2d = features.reshape(1, -1)
-        predict = url_model.predict(features_2d)
-        if predict==1:
-            res="spam"
-        else:
-            res="ham"
+    url_analyze=analyze_url(email)
+    if url_analyze==1:
+        res="spam"
 
     else:
         prediction = predict_new_email(email)
