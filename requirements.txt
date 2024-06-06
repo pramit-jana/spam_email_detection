@@ -6,3 +6,4 @@ nltk
 Flask-Cors
 scikit-learn
 pandas
+requests
