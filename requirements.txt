@@ -8,3 +8,4 @@ scikit-learn
 pandas
 requests
 tldextract
+whois
