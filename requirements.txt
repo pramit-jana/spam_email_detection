@@ -12,5 +12,5 @@ pandas
 requests
 numpy
 strings
-re
+regex
 pandas
