@@ -7,7 +7,7 @@ Flask-Cors
 scikit-learn
 tldextract
 whois
-socket
+sockets
 pandas
 requests
 numpy
