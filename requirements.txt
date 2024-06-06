@@ -5,11 +5,3 @@ joblib
 nltk
 Flask-Cors
 scikit-learn
-tldextract
-whois
-sockets
-pandas
-requests
-numpy
-strings
-regex
