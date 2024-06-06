@@ -6,6 +6,13 @@ import string
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 import joblib
+from urllib.parse import urlparse
+import re
+import requests
+import tldextract
+import whois
+import socket
+import numpy as np
 
 
 # Initialize Flask application
@@ -15,7 +22,7 @@ CORS(app)
 
 ## DATA PROCESS METHODS
 
-nltk.download('all')
+# nltk.download('all')
 ps=PorterStemmer()
 
 def data_process(t):
@@ -56,6 +63,146 @@ def count_suspicious_keywords(email_text):
 
 
 
+    
+
+
+### URL feature extract
+
+# Function to check if the URL contains an IP address
+def has_ip_address(url):
+    try:
+        hostname = urlparse(url).hostname
+        ip_pattern = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'
+        return 1 if re.match(ip_pattern, hostname) else 0
+    except:
+        return 0
+
+# Function to check if URL is long
+def is_long_url(url):
+    return 1 if len(url) > 75 else 0
+
+# Function to check if URL is shortened
+def is_short_url(url):
+    shorteners = ['bit.ly', 'tinyurl.com', 'goo.gl', 't.co', 'ow.ly']
+    return 1 if any(shortener in url for shortener in shorteners) else 0
+    
+
+# Function to check if URL contains '@' symbol
+def has_symbol_at(url):
+    return 1 if '@' in url else 0
+
+
+# Function to check if URL redirects with '//'
+def is_redirecting(url):
+    return 1 if '//' in url[url.find('://') + 3:] else 0
+
+
+
+# Function to check if URL has '-' in domain
+def has_prefix_suffix(url):
+    return 1 if '-' in urlparse(url).netloc else 0
+
+
+# Function to count subdomains
+def count_subdomains(url):
+    return len(tldextract.extract(url).subdomain.split('.'))
+
+
+
+# Function to check if URL uses HTTPS
+def uses_https(url):
+    return 1 if urlparse(url).scheme == 'https' else 0
+
+
+
+
+# Function to calculate domain registration length (requires WHOIS data)
+def domain_registration_length(url):
+    try:
+        domain = whois.whois(urlparse(url).netloc)
+        creation_date = domain.creation_date
+        expiration_date = domain.expiration_date
+        if isinstance(creation_date, list):
+            creation_date = creation_date[0]
+        if isinstance(expiration_date, list):
+            expiration_date = expiration_date[0]
+        return (expiration_date - creation_date).days if creation_date and expiration_date else 0
+    except:
+        return 0
+
+
+# Function to check if a URL has a query string
+def has_query_string(url):
+    # Convert boolean True/False to integer 1/0
+    return int(bool(urlparse(url).query))
+
+
+# Function to check if the URL has a suspicious top-level domain (TLD)
+def has_suspicious_tld(url):
+    suspicious_tlds = ['.tk', '.ml', '.ga', '.cf', '.gq']  # Example of known suspicious TLDs
+    return 1 if any(url.endswith(tld) for tld in suspicious_tlds) else 0
+
+
+# Function to check if the URL has a suspicious port number
+def has_suspicious_port(url):
+    return 1 if bool(re.match(r':\d{1,4}$', urlparse(url).netloc)) else 0
+
+
+
+# Function to check if the URL contains numbers
+def has_numbers(url):
+    return int(bool(re.search(r'\d', url)))
+
+
+
+
+# Function to check if the URL contains an uncommon protocol
+def has_uncommon_protocol(url):
+    uncommon_protocols = ['ftp', 'ssh', 'telnet']  # Example of uncommon protocols
+    return 1 if any(url.lower().startswith(protocol) for protocol in uncommon_protocols) else 0
+
+
+#Function to check suspicious keywords
+def has_suspicious_keyword(url):
+    return 1 if any(substring in url for substring in ['login', 'secure', 'bank', 'update', 'confirm']) else 0
+
+
+def extract_features(url):
+    features = np.array([has_ip_address(url), is_long_url(url), is_short_url(url),
+                         has_symbol_at(url),is_redirecting(url),has_prefix_suffix(url),
+                         count_subdomains(url),uses_https(url),domain_registration_length(url),
+                         has_query_string(url),has_suspicious_tld(url),has_suspicious_port(url),
+                         has_numbers(url),has_uncommon_protocol(url),has_suspicious_keyword(url)])
+    return features
+
+
+
+
+url_model = joblib.load("url_analyzer.pkl")
+
+
+
+def extract_url(message):
+ 
+    url_pattern = re.compile(
+        r'http[s]?://'       
+        r'(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|'   
+        r'(?:%[0-9a-fA-F][0-9a-fA-F]))+',             
+        re.IGNORECASE
+    )
+    
+    # Search for the pattern in the message
+    match = re.search(url_pattern, message)
+    print(match)
+    res=0
+    if match:
+        url=match.group(0)
+        return match
+    else:
+        return None
+
+
+
 ### PREDICT 
 
 X_train=pd.read_csv('X_train.csv')
@@ -92,24 +239,36 @@ def predict_new_email(new_email, model_path='model.pkl'):
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    res=""
     print("Received request...")
     # Get input data from request
     data = request.get_json()
     print("Request data:", data)
     email = data['email']
     
-   
-    prediction = predict_new_email(email)
+    match=extract_url(email)
+        
+    if match:
+        url=match.group(0)
+        features = extract_features(url)
+        features_2d = features.reshape(1, -1)
+        predict = url_model.predict(features_2d)
+        if predict==1:
+            res="spam"
+        else:
+            res="ham"
 
-    # Return the prediction
-    print("Sending response...")
-
-    if prediction==0:
-        res="ham"
     else:
-        res="spam"
+        prediction = predict_new_email(email)
 
+        print("Sending response...")
+
+        if prediction==0:
+            res="ham"
+        else:
+            res="spam"
+            
     return jsonify({'prediction': res})
 
 if __name__ == '__main__':
-    app.run(debug=False,port=8080)  # You can set debug to False in production
+    app.run(debug=False,port=8080)
