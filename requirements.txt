@@ -11,6 +11,6 @@ sockets
 pandas
 requests
 numpy
-string
+strings
 re
 pandas
