@@ -5,7 +5,6 @@ joblib
 nltk
 Flask-Cors
 scikit-learn
-<<<<<<< HEAD
 tldextract
 whois
 socket
@@ -14,6 +13,4 @@ requests
 numpy
 string
 re
-=======
 pandas
->>>>>>> 4b6d553bec52c7990f91adbce5c1ab4f7acfb4a4
