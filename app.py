@@ -22,7 +22,7 @@ CORS(app)
 
 ## DATA PROCESS METHODS
 
-# nltk.download('all')
+nltk.download('all')
 ps=PorterStemmer()
 
 def data_process(t):
