@@ -22,7 +22,7 @@ CORS(app)
 
 ## DATA PROCESS METHODS
 
-nltk.download('all')
+# nltk.download('all')
 ps=PorterStemmer()
 
 def data_process(t):
@@ -182,7 +182,7 @@ url_model = joblib.load("url_analyzer.pkl")
 
 
 
-def analyze_url(message):
+def extract_url(message):
  
     url_pattern = re.compile(
         r'http[s]?://'       
@@ -193,6 +193,7 @@ def analyze_url(message):
     
     # Search for the pattern in the message
     match = re.search(url_pattern, message)
+    print(match)
     res=0
     if match:
         url=match.group(0)
@@ -248,10 +249,11 @@ def predict():
     print("Request data:", data)
     email = data['email']
     
-    url_analyze=analyze_url(email)
-    if url_analyze==1:
+    url_res=extract_url(email)
+        
+    if url_res==1:
         res="spam"
-
+   
     else:
         prediction = predict_new_email(email)
 
